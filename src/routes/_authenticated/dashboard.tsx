@@ -55,7 +55,6 @@ function Dashboard() {
   const cards = [
     { label: "Total Employees", value: stats?.employees ?? 0, sub: `${stats?.active ?? 0} active`, icon: Users, color: "text-primary" },
     { label: "Departments", value: stats?.departments ?? 0, sub: "across org", icon: Building2, color: "text-chart-2" },
-    { label: "Pending Leave", value: stats?.pendingLeave ?? 0, sub: "needs review", icon: CalendarDays, color: "text-warning" },
     { label: "Checked-in Today", value: stats?.todayAttendance ?? 0, sub: format(new Date(), "PP"), icon: Clock, color: "text-chart-2" },
   ];
 
@@ -66,7 +65,7 @@ function Dashboard() {
         <p className="text-sm text-muted-foreground">Workspace overview and live activity.</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {cards.map((c) => (
           <Card key={c.label}>
             <CardContent className="p-5">
@@ -93,9 +92,9 @@ function Dashboard() {
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={deptBreakdown}>
-                  <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={11} />
-                  <YAxis stroke="var(--color-muted-foreground)" fontSize={11} allowDecimals={false} />
-                  <Tooltip contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
+                  <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={11} axisLine={false} tickLine={false} />
+                  <YAxis stroke="var(--color-muted-foreground)" fontSize={11} allowDecimals={false} axisLine={false} tickLine={false} />
+                  <Tooltip cursor={false} contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
                   <Bar dataKey="value" fill="var(--color-primary)" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>

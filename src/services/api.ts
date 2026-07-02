@@ -365,6 +365,14 @@ export const documentService = {
     return `${API_URL}/documents/download/${id}?token=${token}`;
   },
 
+  preview: (filePath: string) => {
+    const token = localStorage.getItem("token");
+    const baseUrl = API_URL.replace("/api", "");
+    // filePath is like "uploads\filename" or "uploads/filename"
+    const normalizedPath = filePath.replace(/\\/g, "/");
+    return `${baseUrl}/${normalizedPath}?token=${token}`;
+  },
+
   delete: async (id: number | string) => {
     const { data } = await api.delete(`/documents/${id}`);
     return data;
