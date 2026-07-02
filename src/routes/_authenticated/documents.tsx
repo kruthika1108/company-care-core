@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Download, FileText, Trash2, Upload } from "lucide-react";
+import { Download, FileText, Trash2, Upload, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/documents")({
@@ -64,6 +64,7 @@ function DocumentsPage() {
         size_bytes: d.size_bytes,
         created_at: d.created_at,
         employee_id: d.employee_id,
+        file_path: d.file_path,
       }));
     },
   });
@@ -97,6 +98,12 @@ function DocumentsPage() {
     document.body.appendChild(a); a.click(); a.remove();
   };
 
+  const onView = (filePath?: string) => {
+    if (!filePath) return toast.error("File path missing");
+    const url = documentService.preview(filePath);
+    window.open(url, "_blank");
+  };
+
   const onDelete = async (id: string | number) => {
     if (!confirm("Delete this document?")) return;
     try {
@@ -116,52 +123,55 @@ function DocumentsPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Documents</h1>
-        <p className="text-sm text-muted-foreground">Securely upload and manage employee documents.</p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5" /> Upload</CardTitle>
-          <CardDescription>Max 20MB per file. Stored privately with role-based access.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-3 md:grid-cols-4">
-          {hr && (
-            <div className="space-y-1">
-              <Label className="text-xs">Employee</Label>
-              <Select value={targetEmp || String(employee?.id || "")} onValueChange={setTargetEmp}>
-                <SelectTrigger><SelectValue placeholder="Select employee" /></SelectTrigger>
-                <SelectContent>
-                  {(employees.data ?? []).map((e: any) => (
-                    <SelectItem key={e.id} value={String(e.id)}>{e.full_name || e.email}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          <div className="space-y-1">
-            <Label className="text-xs">Category</Label>
-            <Select value={category} onValueChange={(v) => setCategory(v as Category)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Documents</h1>
+          <p className="text-sm text-muted-foreground">{hr ? "View employee documents." : "Securely upload and manage your documents."}</p>
+        </div>
+        {hr && (
+          <div className="w-full sm:w-64">
+            <Select value={targetEmp || String(employee?.id || "")} onValueChange={setTargetEmp}>
+              <SelectTrigger><SelectValue placeholder="Select employee" /></SelectTrigger>
               <SelectContent>
-                {CATEGORIES.map((c) => (
-                  <SelectItem key={c} value={c} className="capitalize">{c.replace("_", " ")}</SelectItem>
+                {(employees.data ?? []).map((e: any) => (
+                  <SelectItem key={e.id} value={String(e.id)}>{e.full_name || e.email}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1">
-            <Label className="text-xs">File</Label>
-            <Input type="file" ref={fileRef} />
-          </div>
-          <div className="flex items-end">
-            <Button onClick={onUpload} disabled={uploading} className="w-full">
-              {uploading ? "Uploading…" : "Upload"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+        )}
+      </div>
+
+      {!hr && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5" /> Upload</CardTitle>
+            <CardDescription>Max 20MB per file. Stored privately.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 md:grid-cols-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Category</Label>
+              <Select value={category} onValueChange={(v) => setCategory(v as Category)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {CATEGORIES.map((c) => (
+                    <SelectItem key={c} value={c} className="capitalize">{c.replace("_", " ")}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">File</Label>
+              <Input type="file" ref={fileRef} />
+            </div>
+            <div className="flex items-end">
+              <Button onClick={onUpload} disabled={uploading} className="w-full">
+                {uploading ? "Uploading…" : "Upload"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-3 md:grid-cols-4">
         {CATEGORIES.slice(0, 4).map((c) => (
@@ -196,8 +206,11 @@ function DocumentsPage() {
                   <TableCell><Badge variant="secondary" className="capitalize">{d.category.replace("_", " ")}</Badge></TableCell>
                   <TableCell>{formatBytes(d.size_bytes)}</TableCell>
                   <TableCell className="text-muted-foreground text-xs">{new Date(d.created_at).toLocaleString()}</TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Button size="sm" variant="outline" onClick={() => onDownload(d.id)}>
+                  <TableCell className="text-right space-x-2 min-w-[140px]">
+                    <Button size="sm" variant="outline" onClick={() => onView(d.file_path)} title="View in browser">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => onDownload(d.id)} title="Download">
                       <Download className="h-4 w-4" />
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => onDelete(d.id)}>

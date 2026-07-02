@@ -141,24 +141,21 @@ function AnalyticsPage() {
     return Object.entries(counts).map(([name, value]) => ({ name: name.replace("_", " "), value }));
   }, [employees.data]);
 
-  // Hiring trend
-  const hiringTrend = useMemo(() => {
-    const map: Record<string, number> = {};
-    (employees.data ?? []).forEach((e: any) => {
-      if (!e.date_of_joining) return;
-      const k = monthKey(e.date_of_joining);
-      map[k] = (map[k] ?? 0) + 1;
-    });
-    return Object.entries(map).sort(([a], [b]) => a.localeCompare(b)).slice(-12).map(([k, v]) => ({ month: k, hires: v }));
-  }, [employees.data]);
-
   // Attendance last 14 days
   const attendanceTrend = useMemo(() => {
     const days: { day: string; present: number; late: number }[] = [];
     for (let i = 13; i >= 0; i--) {
       const d = new Date(); d.setDate(d.getDate() - i);
-      const key = d.toISOString().slice(0, 10);
-      const rows = (attendance.data ?? []).filter((a: any) => a.work_date === key);
+      const key = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
+      const rows = (attendance.data ?? []).filter((a: any) => {
+        if (!a.work_date) return false;
+        let wd = a.work_date;
+        if (wd.includes("T")) {
+          const wdDate = new Date(wd);
+          wd = wdDate.getFullYear() + "-" + String(wdDate.getMonth() + 1).padStart(2, '0') + "-" + String(wdDate.getDate()).padStart(2, '0');
+        }
+        return wd === key;
+      });
       const present = rows.filter((r: any) => r.check_in).length;
       const late = rows.filter((r: any) => {
         if (!r.check_in) return false;
@@ -217,9 +214,6 @@ function AnalyticsPage() {
           ["Total Employees", String(kpis.headcount)],
           ["Active Employees", String(kpis.active)],
           ["Attendance Rate (today)", `${kpis.attendanceRate.toFixed(1)}%`],
-          ["Pending Leaves", String(kpis.pendingLeaves)],
-          ["Open Job Postings", String(kpis.openJobs)],
-          ["Total Net Paid (all-time)", kpis.totalNetPaid.toFixed(2)],
         ],
       });
       autoTable(doc, {
@@ -251,14 +245,10 @@ function AnalyticsPage() {
         ["Total Employees", kpis.headcount],
         ["Active Employees", kpis.active],
         ["Attendance Rate (today, %)", Number(kpis.attendanceRate.toFixed(1))],
-        ["Pending Leaves", kpis.pendingLeaves],
-        ["Open Job Postings", kpis.openJobs],
-        ["Total Net Paid", kpis.totalNetPaid],
       ];
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summary), "Summary");
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(deptChart), "Departments");
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(typeChart), "Employment Type");
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(hiringTrend), "Hiring Trend");
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(attendanceTrend), "Attendance 14d");
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(leaveByType), "Leave by Type");
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(leaveByStatus), "Leave by Status");
@@ -286,13 +276,9 @@ function AnalyticsPage() {
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-2">
         <Kpi label="Headcount" value={kpis.headcount} />
         <Kpi label="Active" value={kpis.active} />
-        <Kpi label="Attendance Today" value={`${kpis.attendanceRate.toFixed(0)}%`} />
-        <Kpi label="Pending Leaves" value={kpis.pendingLeaves} />
-        <Kpi label="Open Jobs" value={kpis.openJobs} />
-        <Kpi label="Net Paid" value={kpis.totalNetPaid.toLocaleString(undefined, { maximumFractionDigits: 0 })} />
       </div>
 
       <Tabs defaultValue="people">
@@ -300,8 +286,6 @@ function AnalyticsPage() {
           <TabsTrigger value="people">People</TabsTrigger>
           <TabsTrigger value="time">Time</TabsTrigger>
           <TabsTrigger value="leave">Leave</TabsTrigger>
-          <TabsTrigger value="payroll">Payroll</TabsTrigger>
-          <TabsTrigger value="recruit">Recruitment</TabsTrigger>
         </TabsList>
 
         <TabsContent value="people" className="grid gap-4 md:grid-cols-2">
@@ -311,7 +295,7 @@ function AnalyticsPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis dataKey="name" fontSize={11} />
                 <YAxis allowDecimals={false} fontSize={11} />
-                <Tooltip />
+                <Tooltip cursor={false} contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)', color: 'var(--color-foreground)' }} itemStyle={{ color: 'var(--color-foreground)' }} />
                 <Bar dataKey="value" fill="var(--color-chart-1)" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -322,18 +306,8 @@ function AnalyticsPage() {
                 <Pie data={typeChart} dataKey="value" nameKey="name" innerRadius={50} outerRadius={90} paddingAngle={2}>
                   {typeChart.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
-                <Tooltip /><Legend iconType="circle" wrapperStyle={{ fontSize: 11 }} />
+                <Tooltip cursor={false} contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)', color: 'var(--color-foreground)' }} itemStyle={{ color: 'var(--color-foreground)' }} /><Legend iconType="circle" wrapperStyle={{ fontSize: 11 }} />
               </PieChart>
-            </ResponsiveContainer>
-          </ChartCard>
-          <ChartCard title="Hiring Trend (last 12 months)" full>
-            <ResponsiveContainer width="100%" height={280}>
-              <LineChart data={hiringTrend}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                <XAxis dataKey="month" fontSize={11} /><YAxis allowDecimals={false} fontSize={11} />
-                <Tooltip />
-                <Line type="monotone" dataKey="hires" stroke="var(--color-chart-2)" strokeWidth={2} dot={{ r: 3 }} />
-              </LineChart>
             </ResponsiveContainer>
           </ChartCard>
         </TabsContent>
@@ -344,7 +318,7 @@ function AnalyticsPage() {
               <BarChart data={attendanceTrend}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis dataKey="day" fontSize={11} /><YAxis allowDecimals={false} fontSize={11} />
-                <Tooltip /><Legend />
+                <Tooltip cursor={false} contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)', color: 'var(--color-foreground)' }} itemStyle={{ color: 'var(--color-foreground)' }} /><Legend />
                 <Bar dataKey="present" stackId="a" fill="var(--color-chart-2)" />
                 <Bar dataKey="late" stackId="a" fill="var(--color-chart-4)" />
               </BarChart>
@@ -359,7 +333,7 @@ function AnalyticsPage() {
                 <Pie data={leaveByType} dataKey="value" nameKey="name" outerRadius={90}>
                   {leaveByType.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
-                <Tooltip /><Legend iconType="circle" wrapperStyle={{ fontSize: 11 }} />
+                <Tooltip cursor={false} contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)', color: 'var(--color-foreground)' }} itemStyle={{ color: 'var(--color-foreground)' }} /><Legend iconType="circle" wrapperStyle={{ fontSize: 11 }} />
               </PieChart>
             </ResponsiveContainer>
           </ChartCard>
@@ -368,53 +342,13 @@ function AnalyticsPage() {
               <BarChart data={leaveByStatus}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis dataKey="name" fontSize={11} /><YAxis allowDecimals={false} fontSize={11} />
-                <Tooltip />
+                <Tooltip cursor={false} contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)', color: 'var(--color-foreground)' }} itemStyle={{ color: 'var(--color-foreground)' }} />
                 <Bar dataKey="value" fill="var(--color-chart-3)" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </ChartCard>
         </TabsContent>
-
-        <TabsContent value="payroll">
-          <ChartCard title="Payroll Trend">
-            <ResponsiveContainer width="100%" height={320}>
-              <LineChart data={payrollTrend}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                <XAxis dataKey="month" fontSize={11} /><YAxis fontSize={11} />
-                <Tooltip /><Legend />
-                <Line type="monotone" dataKey="gross" stroke="var(--color-chart-1)" strokeWidth={2} />
-                <Line type="monotone" dataKey="net" stroke="var(--color-chart-2)" strokeWidth={2} />
-                <Line type="monotone" dataKey="tax" stroke="var(--color-chart-4)" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
-          </ChartCard>
-        </TabsContent>
-
-        <TabsContent value="recruit">
-          <ChartCard title="Recruitment Funnel">
-            <ResponsiveContainer width="100%" height={320}>
-              <BarChart data={funnel} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                <XAxis type="number" allowDecimals={false} fontSize={11} />
-                <YAxis dataKey="stage" type="category" fontSize={11} width={90} />
-                <Tooltip />
-                <Bar dataKey="count" fill="var(--color-chart-1)" radius={[0, 6, 6, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartCard>
-        </TabsContent>
       </Tabs>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Download className="h-5 w-5" /> Export Reports</CardTitle>
-          <CardDescription>Download the current analytics snapshot.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex gap-2">
-          <Button onClick={exportPDF}><FileText className="h-4 w-4" /> PDF Report</Button>
-          <Button onClick={exportExcel} variant="secondary"><FileSpreadsheet className="h-4 w-4" /> Excel Workbook</Button>
-        </CardContent>
-      </Card>
     </div>
   );
 }

@@ -13,7 +13,7 @@ import { Wallet, Plus, Loader2, Download, FileText, CheckCircle2, Calendar } fro
 import { toast } from "sonner";
 import { useMe } from "@/hooks/use-me";
 import { isHrOrAdmin } from "@/lib/hrms";
-import { monthName, downloadPayslipPDF } from "@/lib/payroll";
+import { monthName } from "@/lib/payroll";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/payroll")({
@@ -112,7 +112,6 @@ function PayrollPage() {
         <TabsList>
           <TabsTrigger value="mine">My payslips ({mySlips.length})</TabsTrigger>
           {isHr && <TabsTrigger value="runs">Payroll runs ({runs.length})</TabsTrigger>}
-          {isHr && <TabsTrigger value="analytics">Analytics</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="mine">
@@ -125,28 +124,6 @@ function PayrollPage() {
           </TabsContent>
         )}
 
-        {isHr && (
-          <TabsContent value="analytics">
-            <Card>
-              <CardHeader><CardTitle className="text-sm">Net payout — last 6 runs</CardTitle></CardHeader>
-              <CardContent className="h-72">
-                {chartData.length === 0 ? (
-                  <div className="h-full flex items-center justify-center text-sm text-muted-foreground">No data yet.</div>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                      <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-                      <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                      <Tooltip formatter={(v: number) => inr(v)} />
-                      <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
       </Tabs>
     </div>
   );
@@ -171,20 +148,6 @@ function StatCard({ label, value, icon: Icon }: { label: string; value: string; 
 function MyPayslips({ slips }: { slips: any[] }) {
   const { user, employee } = useMe();
 
-  const download = (slip: any) => {
-    if (!employee) return;
-    downloadPayslipPDF({
-      slip,
-      employee: {
-        full_name: employee.name || user?.name || "Employee",
-        employee_code: employee.employee_code ?? "—",
-        designation: employee.designation,
-        department: employee.department || employee.department_name,
-        email: employee.email || user?.email,
-      },
-    });
-  };
-
   return (
     <Card className="mt-4">
       <CardContent className="p-0 overflow-x-auto">
@@ -196,7 +159,6 @@ function MyPayslips({ slips }: { slips: any[] }) {
               <TableHead>Deductions</TableHead>
               <TableHead>Net</TableHead>
               <TableHead>Paid days</TableHead>
-              <TableHead className="text-right">Payslip</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -212,11 +174,6 @@ function MyPayslips({ slips }: { slips: any[] }) {
                 <TableCell className="text-sm text-destructive">{inr(Number(s.pf) + Number(s.tax) + Number(s.other_deductions))}</TableCell>
                 <TableCell className="text-sm font-semibold">{inr(Number(s.net))}</TableCell>
                 <TableCell className="text-sm">{s.paid_days} / {s.working_days}</TableCell>
-                <TableCell className="text-right">
-                  <Button size="sm" variant="outline" className="h-7 gap-1" onClick={() => download(s)}>
-                    <Download className="h-3 w-3" /> PDF
-                  </Button>
-                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -301,18 +258,6 @@ function RunDetailDialog({ run, onClose }: { run: any; onClose: () => void }) {
 
   const total = slips.reduce((s, r) => s + Number(r.net || 0), 0);
 
-  const downloadOne = (slip: any) => {
-    downloadPayslipPDF({
-      slip,
-      employee: {
-        full_name: slip.employees?.profiles?.full_name ?? "—",
-        employee_code: slip.employees?.employee_code ?? "—",
-        designation: slip.employees?.designation,
-        department: slip.employees?.departments?.name,
-      },
-    });
-  };
-
   return (
     <Dialog open={!!run} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-3xl">
@@ -330,7 +275,6 @@ function RunDetailDialog({ run, onClose }: { run: any; onClose: () => void }) {
                 <TableHead>Gross</TableHead>
                 <TableHead>Deduct.</TableHead>
                 <TableHead>Net</TableHead>
-                <TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -343,11 +287,6 @@ function RunDetailDialog({ run, onClose }: { run: any; onClose: () => void }) {
                   <TableCell className="text-sm">{inr(Number(s.gross))}</TableCell>
                   <TableCell className="text-sm text-destructive">{inr(Number(s.pf) + Number(s.tax) + Number(s.other_deductions))}</TableCell>
                   <TableCell className="text-sm font-semibold">{inr(Number(s.net))}</TableCell>
-                  <TableCell className="text-right">
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => downloadOne(s)}>
-                      <Download className="h-3 w-3" />
-                    </Button>
-                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

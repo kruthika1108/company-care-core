@@ -56,6 +56,8 @@ function Stars({ value }: { value: number }) {
 function PerformancePage() {
   const { user, roles, employee } = useMe();
   const isManager = isManagerOrAbove(roles);
+  const isAdmin = roles.includes("admin");
+  const defaultTab = isAdmin ? "team" : "goals";
   const qc = useQueryClient();
 
   const myGoals = useQuery({
@@ -121,73 +123,79 @@ function PerformancePage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card><CardHeader className="pb-2"><CardDescription>Avg rating</CardDescription><CardTitle className="text-2xl">{(myReviews.data?.length ? avgRating : 0).toFixed(1)}</CardTitle></CardHeader><CardContent><Stars value={myReviews.data?.length ? avgRating : 0} /></CardContent></Card>
-        <Card><CardHeader className="pb-2"><CardDescription>Active goals</CardDescription><CardTitle className="text-2xl">{goalsActive}</CardTitle></CardHeader><CardContent><Target className="h-5 w-5 text-muted-foreground" /></CardContent></Card>
-        <Card><CardHeader className="pb-2"><CardDescription>Completed goals</CardDescription><CardTitle className="text-2xl">{goalsCompleted}</CardTitle></CardHeader><CardContent><Award className="h-5 w-5 text-muted-foreground" /></CardContent></Card>
-      </div>
+      {!isAdmin && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card><CardHeader className="pb-2"><CardDescription>Avg rating</CardDescription><CardTitle className="text-2xl">{(myReviews.data?.length ? avgRating : 0).toFixed(1)}</CardTitle></CardHeader><CardContent><Stars value={myReviews.data?.length ? avgRating : 0} /></CardContent></Card>
+          <Card><CardHeader className="pb-2"><CardDescription>Active goals</CardDescription><CardTitle className="text-2xl">{goalsActive}</CardTitle></CardHeader><CardContent><Target className="h-5 w-5 text-muted-foreground" /></CardContent></Card>
+          <Card><CardHeader className="pb-2"><CardDescription>Completed goals</CardDescription><CardTitle className="text-2xl">{goalsCompleted}</CardTitle></CardHeader><CardContent><Award className="h-5 w-5 text-muted-foreground" /></CardContent></Card>
+        </div>
+      )}
 
-      <Tabs defaultValue="goals">
+      <Tabs defaultValue={defaultTab}>
         <TabsList>
-          <TabsTrigger value="goals">My Goals</TabsTrigger>
-          <TabsTrigger value="reviews">My Reviews</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          {isManager && <TabsTrigger value="team">Team</TabsTrigger>}
+          {!isAdmin && <TabsTrigger value="goals">My Goals</TabsTrigger>}
+          {!isAdmin && <TabsTrigger value="reviews">My Reviews</TabsTrigger>}
+          {!isAdmin && <TabsTrigger value="analytics">Analytics</TabsTrigger>}
+          {isManager && <TabsTrigger value="team">{isAdmin ? "All Reviews" : "Team"}</TabsTrigger>}
         </TabsList>
 
-        <TabsContent value="goals" className="space-y-4">
-          <div className="flex justify-end">
-            <NewGoalDialog onCreated={() => qc.invalidateQueries({ queryKey: ["perf-goals"] })} employeeId={employee?.id} userId={user?.id} />
-          </div>
-          <div className="grid gap-3">
-            {(myGoals.data ?? []).map((g) => (
-              <GoalCard key={g.id} goal={g} onChange={() => qc.invalidateQueries({ queryKey: ["perf-goals"] })} />
-            ))}
-            {myGoals.data?.length === 0 && <p className="text-sm text-muted-foreground">No goals yet. Create your first goal.</p>}
-          </div>
-        </TabsContent>
+        {!isAdmin && (
+          <>
+            <TabsContent value="goals" className="space-y-4">
+              <div className="flex justify-end">
+                <NewGoalDialog onCreated={() => qc.invalidateQueries({ queryKey: ["perf-goals"] })} employeeId={employee?.id} userId={user?.id} />
+              </div>
+              <div className="grid gap-3">
+                {(myGoals.data ?? []).map((g) => (
+                  <GoalCard key={g.id} goal={g} onChange={() => qc.invalidateQueries({ queryKey: ["perf-goals"] })} />
+                ))}
+                {myGoals.data?.length === 0 && <p className="text-sm text-muted-foreground">No goals yet. Create your first goal.</p>}
+              </div>
+            </TabsContent>
 
-        <TabsContent value="reviews" className="space-y-3">
-          {(myReviews.data ?? []).map((r) => <ReviewCard key={r.id} review={r} />)}
-          {myReviews.data?.length === 0 && <p className="text-sm text-muted-foreground">No reviews yet.</p>}
-        </TabsContent>
+            <TabsContent value="reviews" className="space-y-3">
+              {(myReviews.data ?? []).map((r) => <ReviewCard key={r.id} review={r} />)}
+              {myReviews.data?.length === 0 && <p className="text-sm text-muted-foreground">No reviews yet.</p>}
+            </TabsContent>
 
-        <TabsContent value="analytics" className="grid md:grid-cols-2 gap-4">
-          <Card>
-            <CardHeader><CardTitle>Rating trend</CardTitle></CardHeader>
-            <CardContent style={{ height: 260 }}>
-              <ResponsiveContainer>
-                <LineChart data={ratingTrend}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="period" /><YAxis domain={[0, 5]} /><Tooltip />
-                  <Line type="monotone" dataKey="rating" stroke="hsl(var(--primary))" strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader><CardTitle>Goals by status</CardTitle></CardHeader>
-            <CardContent style={{ height: 260 }}>
-              <ResponsiveContainer>
-                <BarChart data={goalsByStatus}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="name" /><YAxis allowDecimals={false} /><Tooltip />
-                  <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                    {goalsByStatus.map((entry, index) => {
-                      const colors: Record<string, string> = {
-                        "not started": "hsl(var(--muted-foreground))",
-                        "in progress": "#3b82f6", // blue-500
-                        "completed": "#10b981", // emerald-500
-                        "cancelled": "#ef4444", // red-500
-                      };
-                      return <Cell key={`cell-${index}`} fill={colors[entry.name] || "hsl(var(--primary))"} />;
-                    })}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            <TabsContent value="analytics" className="grid md:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader><CardTitle>Rating trend</CardTitle></CardHeader>
+                <CardContent style={{ height: 260 }}>
+                  <ResponsiveContainer>
+                    <LineChart data={ratingTrend}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="period" /><YAxis domain={[0, 5]} /><Tooltip />
+                      <Line type="monotone" dataKey="rating" stroke="hsl(var(--primary))" strokeWidth={2} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader><CardTitle>Goals by status</CardTitle></CardHeader>
+                <CardContent style={{ height: 260 }}>
+                  <ResponsiveContainer>
+                    <BarChart data={goalsByStatus}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="name" /><YAxis allowDecimals={false} /><Tooltip />
+                      <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                        {goalsByStatus.map((entry, index) => {
+                          const colors: Record<string, string> = {
+                            "not started": "hsl(var(--muted-foreground))",
+                            "in progress": "#3b82f6", // blue-500
+                            "completed": "#10b981", // emerald-500
+                            "cancelled": "#ef4444", // red-500
+                          };
+                          return <Cell key={`cell-${index}`} fill={colors[entry.name] || "hsl(var(--primary))"} />;
+                        })}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </>
+        )}
 
         {isManager && (
           <TabsContent value="team" className="space-y-4">

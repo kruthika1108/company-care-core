@@ -1,0 +1,1 @@
+const fs = require('fs'); const file = 'src/routes/_authenticated/analytics.tsx'; let content = fs.readFileSync(file, 'utf8'); content = content.replace(/<Tooltip contentStyle=/g, '<Tooltip cursor={false} contentStyle='); fs.writeFileSync(file, content);
