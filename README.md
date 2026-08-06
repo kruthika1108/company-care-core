@@ -1,97 +1,175 @@
-# Pulse HRMS
+<div align="center">
 
-Pulse HRMS is a modern, self-hosted Human Resource Management System built with a robust **PERN stack** (PostgreSQL, Express, React, Node.js). It features an integrated AI-powered resume screener, comprehensive employee management, payroll processing, and interactive analytics dashboards.
+<br />
 
-## 🚀 Features
+# 💼 Pulse HRMS — Human Resource Management System
 
-*   **Role-Based Access Control (RBAC):** Strict multi-tier authorization across four system roles: Admin, HR Manager, Department Manager, and Employee.
-*   **AI Resume Screener:** Powered by Google Gemini API and `pdf-parse`, automatically analyzes candidate resumes (PDF/TXT) against job requirements to compute match scores, identify missing skills, and provide hiring recommendations. Includes a simulated fallback mode if no API key is provided.
-*   **Interactive Analytics:** Real-time dashboards built with Recharts and Tailwind CSS v4 to visualize attendance, payroll distributions, and recruitment funnels.
-*   **Automated Reporting:** Client-side export capabilities using `jsPDF` and `SheetJS (XLSX)` for dynamic generation of PDF payslips and Excel data summaries.
-*   **Comprehensive HR Modules:**
-    *   **Recruitment & Onboarding:** Job postings, candidate pipeline, and onboarding task tracking.
-    *   **Employee Management:** Department structuring, goal assignments, and performance reviews.
-    *   **Time & Leave:** Attendance clock-in/out, leave requests, and leave balance tracking.
-    *   **Payroll:** Monthly payroll runs and automated tax/deduction calculations.
+### *End-to-End DevSecOps · CI/CD · Cloud-Native Kubernetes Deployment*
 
-## 🛠️ Tech Stack
+<br/>
 
-### Frontend
-*   **React 19**
-*   **TanStack Start** (Full-stack React framework)
-*   **TanStack Router & Query**
-*   **Tailwind CSS v4** & **Radix UI** (Shadcn/ui)
-*   **Recharts** (Data visualization)
-*   **jsPDF & SheetJS** (Report generation)
+[![GitHub Stars](https://img.shields.io/github/stars/syedmehfooz47/hrms-devops?style=for-the-badge&logo=github&color=FF6B35)](https://github.com/syedmehfooz47/hrms-devops)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+[![CI Pipeline](https://img.shields.io/badge/CI-Jenkins-D24939?style=for-the-badge&logo=jenkins&logoColor=white)](https://www.jenkins.io/)
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-K8s-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white)](https://kubernetes.io/)
+[![SonarQube](https://img.shields.io/badge/Quality-SonarQube-4E9BCD?style=for-the-badge&logo=sonarqube&logoColor=white)](https://www.sonarqube.org/)
+[![Trivy](https://img.shields.io/badge/Security-Trivy-1904DA?style=for-the-badge&logo=aqua&logoColor=white)](https://aquasecurity.github.io/trivy/)
 
-### Backend
-*   **Node.js & Express.js**
-*   **PostgreSQL** (Relational database with 15+ tables)
-*   **JSON Web Tokens (JWT)** (Authentication & Authorization)
-*   **Google Gemini API** (`@google/generative-ai`)
-*   **Multer & pdf-parse** (File uploads and resume parsing)
+<br/>
 
-## 📦 Project Architecture
+**Pulse HRMS** is a production-grade PERN stack application built to demonstrate real-world DevSecOps, full CI/CD automation, container orchestration, security scanning, and cloud-native Kubernetes deployment strategies.
 
-The application runs as two decoupled services:
-*   **Backend API Server:** Runs on `http://localhost:5000`. Handles authentication, database operations, file storage, and AI processing.
-*   **Frontend Client:** Runs on `http://localhost:8081` (or 8080).
+</div>
 
-## ⚙️ Setup & Installation
+---
 
-### Prerequisites
-*   Node.js (v18+)
-*   PostgreSQL installed and running locally
+## 📋 Table of Contents
 
-### 1. Database Setup
-Create a PostgreSQL database named `hrms` and run the provided schema scripts:
-```bash
-# Connect to PostgreSQL and create database
-psql -U postgres -c "CREATE DATABASE hrms;"
+> [!Important]
+> Navigate through the infrastructure setup, CI/CD pipeline configuration, and Kubernetes orchestration steps.
 
-# Run the database schema to load all tables
-psql -U postgres -d hrms -f backend/schema.sql
+| Component | Jump To |
+|---|---|
+| 🏗️ Architecture | [DevOps Architecture](#architecture) |
+| 🚀 CI/CD Pipeline | [Jenkins CI/CD Workflows](#cicd) |
+| ☁️ Kubernetes Setup | [K8s Manifests & Deployment](#k8s) |
+| 🛡️ Security | [SonarQube & Trivy Integration](#security) |
+| 🐳 Docker | [Containerization](#docker) |
 
-# Update the candidates table with AI fields
-psql -U postgres -d hrms -f backend/add_ai_columns.sql
+---
+
+## 🎯 DevOps & Cloud Overview
+
+While Pulse HRMS is a fully functional AI-powered HR platform (React, Node.js, Express, PostgreSQL), this repository focuses strictly on the **DevSecOps** and **Cloud Infrastructure** lifecycle:
+
+- **Continuous Integration (CI)** — Automated builds, tests, and Docker image creation via Jenkins.
+- **Continuous Delivery (CD) & GitOps** — Automated manifest updates triggering Kubernetes deployments.
+- **DevSecOps** — Filesystem scanning with Trivy and static code analysis with SonarQube quality gates.
+- **Container Orchestration** — Multi-tier microservices architecture on Kubernetes with Nginx reverse proxy.
+- **High Availability** — Liveness/Readiness probes and `initContainers` for strict startup sequencing.
+- **Alerting** — Automated Jenkins email notifications for pipeline status monitoring.
+
+---
+
+## 🚀 DevOps Architecture & Flow
+
+<div align="center">
+
+*Full end-to-end DevSecOps & GitOps deployment pipeline*
+
+</div>
+
+1. **Developer Commits Code** to the GitHub repository.
+2. **Jenkins CI Pipeline** triggers automatically.
+   - Cleans workspace and checks out code.
+   - Runs Trivy filesystem scan for vulnerabilities.
+   - Executes SonarQube code quality analysis.
+   - Builds multi-stage Docker images for both Frontend and Backend.
+   - Pushes built images to Docker Hub.
+3. **Jenkins CD Pipeline (GitOps)** is triggered downstream.
+   - Pulls the Kubernetes manifests.
+   - Updates `backend.yml` and `frontend.yml` with the newly built Docker image tags.
+   - Commits and pushes the updated manifests back to GitHub (`[skip ci]`).
+4. **Kubernetes Cluster** synchronizes the updated state and rolls out the new deployments.
+
+---
+
+## 🛠️ DevOps Tech Stack
+
+| Technology | Purpose |
+|---|---|
+| ![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat-square&logo=github&logoColor=white) | Source Code & Version Control |
+| ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white) | Application Containerization |
+| ![Jenkins](https://img.shields.io/badge/Jenkins-D24939?style=flat-square&logo=jenkins&logoColor=white) | Master CI/CD Orchestration |
+| ![SonarQube](https://img.shields.io/badge/SonarQube-4E9BCD?style=flat-square&logo=sonarqube&logoColor=white) | Code Quality & Quality Gates |
+| ![Trivy](https://img.shields.io/badge/Trivy-1904DA?style=flat-square&logo=aqua&logoColor=white) | Vulnerability & Filesystem Scanning |
+| ![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=flat-square&logo=kubernetes&logoColor=white) | Container Orchestration |
+| ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=flat-square&logo=postgresql&logoColor=white) | Stateful Database Workload |
+
+---
+
+## ⚙️ Jenkins CI/CD Configuration
+
+<h3 id="cicd">Pipeline Architecture</h3>
+
+The project utilizes a dual-pipeline architecture for separation of concerns between integration and deployment.
+
+#### 1. Continuous Integration (`Jenkinsfile`)
+- **Agent**: Runs on any available Jenkins worker.
+- **Stages**:
+  - `Clean Workspace` & `Checkout Code`
+  - `Check Skip CI`: Prevents recursive loops from GitOps commits.
+  - `Trivy File System Scan`: Early security vulnerability detection.
+  - `SonarQube Analysis` & `Quality Gate`: Enforces code standards.
+  - `Docker: Build Images`: Compiles React app and Express server into optimized images.
+  - `Docker: Push to DockerHub`: Stores artifacts in a central registry.
+- **Post Actions**: Generates reports, triggers CD pipeline, and dispatches dynamic HTML email alerts.
+
+#### 2. GitOps Continuous Delivery (`GitOps/Jenkinsfile`)
+- **Stages**:
+  - `Code Checkout`: Fetches the latest repository state.
+  - `Update: Kubernetes manifests`: Utilizes `sed` to dynamically inject the new `$DOCKER_TAG` into `kubernetes/frontend.yml` and `kubernetes/backend.yml`.
+  - `Git: Code update and push`: Authenticates with GitHub and commits the updated infrastructure as code back to the `main` branch.
+
+---
+
+## ☁️ Kubernetes Orchestration
+
+<h3 id="k8s">Cluster Design & Manifests</h3>
+
+The infrastructure is defined entirely as code inside the `kubernetes/` directory, implementing a robust microservices layout.
+
+- **Frontend Deployment (`frontend.yml`)**:
+  - Dual-container Pod: React application and an Nginx reverse proxy.
+  - `initContainers`: Runs a `wget` loop to ensure the backend service is fully responsive before the frontend starts.
+  - Exposed externally via a `NodePort` service.
+- **Backend Deployment (`backend.yml`)**:
+  - Express.js API server handling business logic and AI integration.
+  - `initContainers`: Validates PostgreSQL readiness via `pg_isready` before initiating DB connections.
+- **Stateful Workloads**:
+  - `postgres.yml` along with `persistentVolume.yaml` and `persistentVolumeClaim.yaml` to ensure database persistence and data durability across pod restarts.
+
+### Resiliency & Health Checks
+All deployments implement strict Kubernetes health checks to ensure zero-downtime rollouts and self-healing:
+```yaml
+livenessProbe:
+  httpGet:
+    path: /
+    port: 3000
+  initialDelaySeconds: 10
+readinessProbe: ...
 ```
 
-### 2. Backend Configuration
-Create a `.env` file in the `backend/` directory:
-```env
-DB_USER=postgres
-DB_HOST=localhost
-DB_NAME=hrms
-DB_PASSWORD=your_database_password
-DB_PORT=5432
-JWT_SECRET=your_jwt_secret_key
-PORT=5000
-GEMINI_API_KEY=your_gemini_api_key_here # Optional: For real AI analysis
-```
+---
 
-Start the backend server:
-```bash
-cd backend
-npm install
-npm run dev
-```
+## 🛡️ DevSecOps Integration
 
-### 3. Frontend Configuration
-Open a new terminal in the root directory:
-```bash
-npm install
-npm run dev
-```
-Access the application at `http://localhost:8081`.
+<h3 id="security">Security & Code Quality Analysis</h3>
 
-## 📝 User Roles
+Security is shifted left into the Jenkins pipeline:
 
-1.  **Admin:** Full system access. Automatically assigned to the first registered user.
-2.  **HR Manager:** Access to employees, departments, recruitment, payroll, leave, and documents.
-3.  **Department Manager:** Access to team attendance, leave approvals, recruitment pipelines, and performance reviews.
-4.  **Employee:** Can view own logs, apply for leave, clock in/out, and track personal goals.
+- **Aqua Trivy**: Scans the raw filesystem and dependencies before the Docker build phase, catching known CVEs early in the lifecycle.
+- **SonarQube**: Node.js and React codebases are analyzed for bugs, vulnerabilities, and code smells. The pipeline blocks deployment if the defined Quality Gate fails.
 
-*Note: You can manually upgrade a user to an Admin directly in the database:*
-```sql
-UPDATE users SET role = 'admin' WHERE email = 'your-email@domain.com';
-```
+---
+
+## 🐳 Docker Containerization
+
+<h3 id="docker">Multi-Stage Builds & Local Compose</h3>
+
+- **Frontend Image**: Built using a multi-stage `Dockerfile` (`node:20-alpine`) to keep the final image footprint minimal.
+- **Local Dev Environments**: A comprehensive `docker-compose.yml` is provided for local debugging, orchestrating the frontend, backend, and PostgreSQL database within an isolated bridged network (`hrms-network`).
+
+---
+
+<div align="center">
+
+### 🙏 Acknowledgements
+
+Built with a focus on DevSecOps and cloud-native best practices.
+
+Built with ❤️ by [Syed Mehfooz C S](https://github.com/syedmehfooz47)
+
+[![GitHub](https://img.shields.io/badge/GitHub-syedmehfooz47-181717?style=for-the-badge&logo=github)](https://github.com/syedmehfooz47)
+
+</div>
