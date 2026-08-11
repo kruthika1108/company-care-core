@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  namespace: hrms
+  labels:
+    app: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      name: backend
+      labels:
+        app: backend
+    spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:16
+          command:
+            - sh
+            - -c
+            - "until pg_isready -h postgres-service.hrms.svc.cluster.local -p 5432 -U postgres; do echo waiting for database; sleep 2; done;"
+      containers:
+        - name: backend
+          image: syedmehfooz/hrms-backend:v1.35
+          ports:
+            - containerPort: 4000
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 4000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 4000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          env:
+            - name: DB_HOST
+              value: "postgres-service.hrms.svc.cluster.local"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_USER
+              value: "postgres"
+            - name: DB_PASSWORD
+              value: "postgrespassword"
+            - name: DB_NAME
+              value: "hrms"
+            - name: JWT_SECRET
+              value: "iUEE2gKvMsi26L9qMjPzwZOWfYT0hdZHgEReFL4jSqX"
+            - name: SALT
+              value: "10"
+            - name: PORT
+              value: "4000"
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gemini-secret
+                  key: api-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: hrms
+spec:
+  type: NodePort
+  selector:
+    app: backend
+  ports:
+    - port: 4000
+      targetPort: 4000
+      protocol: TCP
+      nodePort: 31002

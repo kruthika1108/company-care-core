@@ -1,0 +1,18 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: postgres-schema-init
+  namespace: hrms
+spec:
+  template:
+    spec:
+      containers:
+      - name: db-init
+        image: postgres:16
+        command:
+        - /bin/sh
+        - -c
+        - |
+          echo "Schema initialization is handled by postgres-deployment's /docker-entrypoint-initdb.d automatically."
+      restartPolicy: Never
+  backoffLimit: 4
